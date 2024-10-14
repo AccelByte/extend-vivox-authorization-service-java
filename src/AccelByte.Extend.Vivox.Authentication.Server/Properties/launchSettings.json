@@ -1,0 +1,13 @@
+﻿{
+  "profiles": {
+    "AccelByte.Extend.Vivox.Authentication.Server": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5268;https://localhost:7288",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
