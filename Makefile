@@ -34,7 +34,7 @@ build_server:
 		-w /data/.tmp \
 		mcr.microsoft.com/dotnet/sdk:$(DOTNETVER) \
 		dotnet build
-	cp -r .tmp/AccelByte.Extend.ServiceExtension.Server/bin/* \
+	cp -r .tmp/AccelByte.Extend.Vivox.Authentication.Server/bin/* \
 			.output/
 
 
@@ -56,7 +56,7 @@ run_server:
 		-e DOTNET_CLI_HOME="/data/.cache" \
 		--env-file .env \
 		-v $$(pwd):/data \
-		-w /data/.tmp/AccelByte.Extend.ServiceExtension.Server \
+		-w /data/.tmp/AccelByte.Extend.Vivox.Authentication.Server \
 		-p 6565:6565 \
 		-p 8080:8080 \
 		mcr.microsoft.com/dotnet/sdk:$(DOTNETVER) \
