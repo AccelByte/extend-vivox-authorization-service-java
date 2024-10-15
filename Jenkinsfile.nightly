@@ -34,7 +34,12 @@ pipeline {
               "${env.JOB_NAME}-${env.BUILD_NUMBER}", 'Jenkins', "${env.BUILD_URL}console")
         }
       }
-    }    
+    }
+    stage('Unit Test') {
+      steps {
+        sh "make test"
+      }
+    }
   }
   post {
     success {
