@@ -1,10 +1,10 @@
-# extend-rtu-vivox-authorization-service-csharp
+# extend-rtu-vivox-authorization-service-java
 
 A Vivox authentication service is essential for integrating AccelByte Gaming Services (AGS), Vivox, and game clients. It generates the signed Vivox token that game clients need to interact with Vivox. This token is valid for 90 seconds, so game clients must regularly call the service to obtain a new token.
 
 ## Overview
 
-This repository provides a project template for an `Vivox Authorization Service` Extend Service Extension app written in `C#`. It includes a ready to use service to generate Vivox access token. This web service created using a stack that includes a `gRPC Server` and the [gRPC Gateway](https://github.com/grpc-ecosystem/grpc-gateway?tab=readme-ov-file#about). Additionally, it comes with built-in instrumentation for observability, ensuring that metrics, traces, and logs are available upon deployment.
+This repository provides a project template for an `Vivox Authorization Service` Extend Service Extension app written in `Java`. It includes a ready to use service to generate Vivox access token. This web service created using a stack that includes a `gRPC Server` and the [gRPC Gateway](https://github.com/grpc-ecosystem/grpc-gateway?tab=readme-ov-file#about). Additionally, it comes with built-in instrumentation for observability, ensuring that metrics, traces, and logs are available upon deployment.
 
 You can clone this repository to modify and develope your own 
 `Vivox Authorization Service` Extend app. Simply modify this project by defining your 
@@ -82,20 +82,21 @@ Please refer to [Extend Service Extension](https://docs.accelbyte.io/gaming-serv
          ...
          ```
 
-   d. .NET 6 SDK
+   d. JDK 17
 
       - On Linux Ubuntu:
 
-         To install from the Ubuntu repository, run `sudo apt-get update && sudo apt-get install -y dotnet-sdk-6.0`.
+         To install from the Ubuntu repository, run: `sudo apt update && sudo apt install openjdk-17-jdk`.
 
       - On Windows or macOS:
 
-         Follow Microsoft's documentation for installing .NET on [Windows](https://learn.microsoft.com/en-us/dotnet/core/install/windows) or on [macOS](https://learn.microsoft.com/en-us/dotnet/core/install/macos).
+         Follow Microsoft's documentation for [installing the Microsoft Build for OpenJDK](https://learn.microsoft.com/en-us/java/openjdk/install).
 
          ```
-         dotnet --version
-         
-         6.0.128
+         java --version
+
+         openjdk 17.0.10 2024-01-16
+         ...
          ```
 
    e. [extend-helper-cli](https://github.com/AccelByte/extend-helper-cli)
@@ -157,30 +158,6 @@ To be able to run this app, you will need to follow these setup steps.
    For more options, create 
    `src/AccelByte.Extend.Vivox.Authentication.Server/appsettings.Development.json` 
    and fill in the required configuration.
-
-   ```json
-   {
-      "EnableAuthorization": true,                    // Enable or disable access token and permission check (env var: PLUGIN_GRPC_SERVER_AUTH_ENABLED)
-      "RevocationListRefreshPeriod": 60,
-      "AccelByte": {
-        "BaseUrl": "http://test.accelbyte.io",       // Your environment's domain Base URL (env var: AB_BASE_URL)
-        "ClientId": "xxxxxxxxxx",                    // Client ID (env var: AB_CLIENT_ID)    
-        "ClientSecret": "xxxxxxxxxx",                // Client Secret (env var: AB_CLIENT_SECRET)
-        "AppName": "EXTENDSERVICEEXTENSIONSERVICE",
-        "TraceIdVersion": "1",
-        "Namespace": "xxxxxxxxxx",                   // Namespace ID (env var: AB_NAMESPACE)
-        "EnableTraceId": true,
-        "EnableUserAgentInfo": true,
-        "ResourceName": "EXTENDSERVICEEXTENSIONSERVICE"
-      },
-      "Vivox": {
-        "Issuer": "xxxx",                           // Vivox issuer (env var: VIVOX_ISSUER)
-        "Domain": "tla.vivox.com",                  // Vivox domain (env var: VIVOX_DOMAIN)
-        "SigningKey": "xxxxxxx"                     // Vivox signing key (env var: VIVOX_SIGNING_KEY)
-      }
-   }
-   ```
-   > :warning: **Environment variable values will override related configuration values in this file**.
 
 ## Building
 

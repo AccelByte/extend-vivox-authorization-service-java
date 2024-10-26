@@ -1,11 +1,13 @@
 # gRPC Server Builder
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:6.0-alpine3.19 AS grpc-server-builder
-RUN apk update && apk add --no-cache gcompat
+FROM --platform=$BUILDPLATFORM ibm-semeru-runtimes:open-17-jdk AS grpc-server-builder
 WORKDIR /build
-COPY src/AccelByte.Extend.Vivox.Authentication.Server/*.csproj .
-RUN dotnet restore -r linux-musl-x64
-COPY src/AccelByte.Extend.Vivox.Authentication.Server .
-RUN dotnet publish -c Release -r linux-musl-x64 -o /output
+COPY gradle gradle
+COPY gradlew settings.gradle .
+RUN sh gradlew wrapper -i
+COPY *.gradle .
+RUN sh gradlew dependencies -i
+COPY . .
+RUN sh gradlew build -i
 
 
 # gRPC Gateway Gen
@@ -18,7 +20,7 @@ RUN bash proto.sh
 
 
 # gRPC Gateway Builder
-FROM --platform=$BUILDPLATFORM golang:1.20-alpine3.19 AS grpc-gateway-builder
+FROM --platform=$BUILDPLATFORM golang:1.20 AS grpc-gateway-builder
 ARG TARGETOS
 ARG TARGETARCH
 ARG GOOS=$TARGETOS
@@ -26,25 +28,27 @@ ARG GOARCH=$TARGETARCH
 ARG CGO_ENABLED=0
 WORKDIR /build
 COPY gateway/go.mod gateway/go.sum .
-RUN go mod download
+RUN go mod download && \
+    go mod verify
 COPY gateway/ .
-RUN rm -rf gateway/pkg/pb
+RUN rm -rf pkg/pb
 COPY --from=grpc-gateway-gen /build/gateway/pkg/pb ./pkg/pb
 RUN go build -v -o /output/$TARGETOS/$TARGETARCH/grpc_gateway .
 
 
-# Extend App
-FROM mcr.microsoft.com/dotnet/aspnet:6.0-alpine3.19
+# Extend Service Extension app
+FROM ibm-semeru-runtimes:open-17-jre
 ARG TARGETOS
 ARG TARGETARCH
-RUN apk --no-cache add bash
 WORKDIR /app
+COPY --from=grpc-server-builder /build/target/*.jar app.jar
+COPY jars/aws-opentelemetry-agent.jar aws-opentelemetry-agent.jar
 COPY --from=grpc-gateway-builder /output/$TARGETOS/$TARGETARCH/grpc_gateway .
 COPY --from=grpc-gateway-gen /build/gateway/apidocs ./apidocs
-COPY gateway/third_party ./third_party
-COPY --from=grpc-server-builder /output/* .
+RUN rm -fv apidocs/permission.swagger.json
+COPY gateway/third_party third_party
 COPY wrapper.sh .
 RUN chmod +x wrapper.sh
-# gRPC server port, gRPC gateway port, Prometheus /metrics port
-EXPOSE 6565 8000 8080
+# gRPC gateway HTTP port, gRPC server port, Prometheus /metrics http port
+EXPOSE 8000 6565 8080
 CMD ./wrapper.sh

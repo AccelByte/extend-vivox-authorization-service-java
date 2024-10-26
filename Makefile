@@ -7,16 +7,13 @@ SHELL := /bin/bash
 IMAGE_NAME := $(shell basename "$$(pwd)")-app
 BUILDER := extend-builder
 
-DOTNETVER := 6.0-jammy
-
-TEST_SAMPLE_CONTAINER_NAME := sample-service-extension-test
 
 .PHONY: test
 
 proto:
 	docker run -t --rm -u $$(id -u):$$(id -g) \
-		-v $$(pwd):/build \
-		-w /build \
+		-v $$(pwd):/data \
+		-w /data \
 		--entrypoint /bin/bash \
 		rvolosatovs/protoc:4.1.0 \
 			proto.sh
@@ -24,43 +21,34 @@ proto:
 build: build_server build_gateway
 
 build_server:
-	rm -rf .output .tmp
-	mkdir -p .output
-	cp -r src .tmp/
-	docker run -t --rm -u $$(id -u):$$(id -g) \
-		-e HOME="/data/.cache" \
-		-e DOTNET_CLI_HOME="/data/.cache" \
-		-v $$(pwd):/data \
-		-w /data/.tmp \
-		mcr.microsoft.com/dotnet/sdk:$(DOTNETVER) \
-		dotnet build
-	cp -r .tmp/AccelByte.Extend.Vivox.Authentication.Server/bin/* \
-			.output/
-
+	docker run -t --rm \
+			-u $$(id -u):$$(id -g) \
+			-v $$(pwd):/data \
+			-w /data \
+			-e GRADLE_USER_HOME=.gradle \
+			gradle:7.6.4-jdk17 \
+			gradle -i --no-daemon generateProto \
+					|| find .gradle -type f -iname 'protoc-*.exe' -exec chmod +x {} \;		# For MacOS docker host: Workaround to make protoc-*.exe executable
+	docker run -t --rm \
+			-u $$(id -u):$$(id -g) \
+			-v $$(pwd):/data \
+			-w /data \
+			-e GRADLE_USER_HOME=.gradle \
+			gradle:7.6.4-jdk17 \
+			gradle -i --no-daemon build
 
 build_gateway: proto
-	docker run -t --rm -u $$(id -u):$$(id -g) \
-		-e GOCACHE=/data/.cache/go-cache \
-		-e GOPATH=/data/.cache/go-path \
-		-v $$(pwd):/data \
-		-w /data/gateway \
-		golang:1.20-alpine3.19 \
-		go build -o grpc_gateway
 
 run_server:
-	rm -rf .output .tmp
-	mkdir -p .output
-	cp -r src .tmp/
-	docker run --rm -it -u $$(id -u):$$(id -g) \
-		-e HOME="/data/.cache" \
-		-e DOTNET_CLI_HOME="/data/.cache" \
-		--env-file .env \
-		-v $$(pwd):/data \
-		-w /data/.tmp/AccelByte.Extend.Vivox.Authentication.Server \
-		-p 6565:6565 \
-		-p 8080:8080 \
-		mcr.microsoft.com/dotnet/sdk:$(DOTNETVER) \
-		dotnet run
+	docker run -t --rm -u $$(id -u):$$(id -g) \
+			-e GRADLE_USER_HOME=.gradle \
+			--env-file .env \
+			-v $$(pwd):/data/ \
+			-w /data \
+			-p 6565:6565 \
+			-p 8080:8080 \
+			gradle:7.6.4-jdk17 \
+			gradle --console=plain -i --no-daemon run
 
 run_gateway: proto
 	docker run -it --rm -u $$(id -u):$$(id -g) \
@@ -74,8 +62,15 @@ run_gateway: proto
 		golang:1.20-alpine3.19 \
 		go run main.go --grpc-addr host.docker.internal:6565
 
+clean:
+	docker run -t --rm -u $$(id -u):$$(id -g) \
+			-v $$(pwd):/data/ \
+			-w /data/ \
+			-e GRADLE_USER_HOME=.gradle gradle:7.6.4-jdk17 \
+			gradle --console=plain -i --no-daemon clean
+
 image:
-	docker build -t ${IMAGE_NAME} .
+	docker buildx build -t ${IMAGE_NAME} --load .
 
 imagex:
 	docker buildx inspect $(BUILDER) || docker buildx create --name $(BUILDER) --use
@@ -91,11 +86,13 @@ imagex_push:
 	docker buildx rm --keep-state $(BUILDER)
 
 test:
-	docker run --rm -u $$(id -u):$$(id -g) \
-		-v $$(pwd):/data/ \
-		-e HOME="/data/.cache" -e DOTNET_CLI_HOME="/data/.cache" \
-		mcr.microsoft.com/dotnet/sdk:$(DOTNETVER) \
-		sh -c "mkdir -p /data/.tmp && cp -r /data/src /data/.tmp/src && cd /data/.tmp/src && dotnet test && rm -rf /data/.tmp"
+	docker run -t --rm \
+		-u $$(id -u):$$(id -g) \
+		-v $$(pwd):/data \
+		-w /data \
+		-e GRADLE_USER_HOME=.gradle \
+		gradle:7.6.4-jdk17 \
+		gradle -i --no-daemon test
 
 test_docs_broken_links:
 	@test -n "$(SDK_MD_CRAWLER_PATH)" || (echo "SDK_MD_CRAWLER_PATH is not set" ; exit 1)

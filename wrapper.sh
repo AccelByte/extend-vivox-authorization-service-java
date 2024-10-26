@@ -1,6 +1,6 @@
 #!/bin/bash
 
-./AccelByte.Extend.Vivox.Authentication.Server &
+java -javaagent:aws-opentelemetry-agent.jar -jar app.jar &
 
 ./grpc_gateway &
 

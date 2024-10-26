@@ -1,5 +1,5 @@
 githubOwner = 'AccelByte'
-githubRepo = 'extend-rtu-vivox-authorization-service-csharp'
+githubRepo = 'extend-rtu-vivox-authorization-service-java'
 githubSsh = 'accelbyte-sdk-sdkbuild-ssh'
 
 githubUrl = "git@github.com:${githubOwner}/${githubRepo}.git"
