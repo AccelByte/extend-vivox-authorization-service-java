@@ -1,6 +1,7 @@
 package net.accelbyte.extend.serviceextension;
 
 
+import net.accelbyte.extend.serviceextension.config.MockedAppConfig;
 import net.accelbyte.extend.serviceextension.vivox.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -8,7 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest
+@SpringBootTest(
+        classes = MockedAppConfig.class,
+        properties = "spring.main.allow-bean-definition-overriding=true"
+)
 public class GeneratorTests {
 
     @Autowired
