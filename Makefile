@@ -60,7 +60,7 @@ run_gateway: proto
 		-p 8000:8000 \
 		--add-host host.docker.internal:host-gateway \
 		golang:1.20-alpine3.19 \
-		go run main.go --grpc-addr host.docker.internal:6565
+		go run -modcacherw main.go --grpc-addr host.docker.internal:6565
 
 clean:
 	docker run -t --rm -u $$(id -u):$$(id -g) \
