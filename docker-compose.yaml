@@ -20,7 +20,7 @@ services:
       - BASE_PATH
       - VIVOX_ISSUER
       - VIVOX_DOMAIN
-      - VIVOX_SIGNING_KEY     
+      - VIVOX_SIGNING_KEY
       # - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006    # For debugging only
     extra_hosts:
       - host.docker.internal:host-gateway
