@@ -1,55 +1,49 @@
-# gRPC Server Builder
-FROM --platform=$BUILDPLATFORM ibm-semeru-runtimes:open-17-jdk AS grpc-server-builder
+# gRPC gateway gen
+
+FROM --platform=$BUILDPLATFORM rvolosatovs/protoc:4.1.0 AS grpc-gateway-gen
+WORKDIR /build
+COPY gateway gateway
+COPY src src
+COPY proto.sh .
+RUN sh proto.sh
+
+# gRPC server builder
+
+FROM --platform=$BUILDPLATFORM gradle:7.6.4-jdk17 AS grpc-server-builder
 WORKDIR /build
 COPY gradle gradle
 COPY gradlew settings.gradle .
 RUN sh gradlew wrapper -i
 COPY *.gradle .
 RUN sh gradlew dependencies -i
-COPY . .
+COPY src src
 RUN sh gradlew build -i
 
+# gRPC gateway builder
 
-# gRPC Gateway Gen
-FROM --platform=$BUILDPLATFORM rvolosatovs/protoc:4.1.0 AS grpc-gateway-gen
-WORKDIR /build
-COPY gateway gateway
-COPY src src
-COPY proto.sh .
-RUN bash proto.sh
-
-
-# gRPC Gateway Builder
-FROM --platform=$BUILDPLATFORM golang:1.20 AS grpc-gateway-builder
+FROM --platform=$BUILDPLATFORM golang:1.23-alpine3.21 AS grpc-gateway-builder
 ARG TARGETOS
 ARG TARGETARCH
-ARG GOOS=$TARGETOS
-ARG GOARCH=$TARGETARCH
-ARG CGO_ENABLED=0
 WORKDIR /build
 COPY gateway/go.mod gateway/go.sum .
-RUN go mod download && \
-    go mod verify
+RUN go mod download
 COPY gateway/ .
 RUN rm -rf pkg/pb
-COPY --from=grpc-gateway-gen /build/gateway/pkg/pb ./pkg/pb
-RUN go build -v -o /output/$TARGETOS/$TARGETARCH/grpc_gateway .
-
+COPY --from=grpc-gateway-gen /build/gateway/pkg/pb pkg/pb
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH \
+        go build -o grpc-gateway .
 
 # Extend Service Extension app
-FROM alpine:3.18
-RUN apk add --no-cache openjdk17
-ARG TARGETOS
-ARG TARGETARCH
+
+FROM amazoncorretto:17-alpine3.21
 WORKDIR /app
 COPY --from=grpc-server-builder /build/target/*.jar app.jar
-COPY jars/aws-opentelemetry-agent.jar aws-opentelemetry-agent.jar
-COPY --from=grpc-gateway-builder /output/$TARGETOS/$TARGETARCH/grpc_gateway .
-COPY --from=grpc-gateway-gen /build/gateway/apidocs ./apidocs
+COPY jars/aws-opentelemetry-agent.jar .
+COPY --from=grpc-gateway-builder /build/grpc-gateway .
+COPY --from=grpc-gateway-gen /build/gateway/apidocs apidocs
 RUN rm -fv apidocs/permission.swagger.json
 COPY gateway/third_party third_party
 COPY wrapper.sh .
-RUN chmod +x wrapper.sh
-# gRPC gateway HTTP port, gRPC server port, Prometheus /metrics http port
+# gRPC gateway HTTP port, gRPC server port, and /metrics HTTP port
 EXPOSE 8000 6565 8080
-CMD ./wrapper.sh
+CMD ["sh", "/app/wrapper.sh"]
