@@ -73,10 +73,17 @@ public class VivoxService extends ServiceGrpc.ServiceImplBase {
                 throw new StatusRuntimeException(Status.INVALID_ARGUMENT.withDescription("Invalid request type"));
             }
 
-            GenerateVivoxTokenResponse response = GenerateVivoxTokenResponse.newBuilder()
-                    .setUri(token.getClaims().getTo())
-                    .setAccessToken(token.getValue())
-                    .build();
+            String uri = token.getClaims().getTo();
+            GenerateVivoxTokenResponse.Builder responseBuilder = GenerateVivoxTokenResponse.newBuilder();
+
+            responseBuilder.setAccessToken(token.getValue());
+
+            if (uri != null && !uri.isBlank()) {
+                responseBuilder.setUri(uri);
+            }
+
+            GenerateVivoxTokenResponse response = responseBuilder.build();
+
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         } catch (Exception e) {
