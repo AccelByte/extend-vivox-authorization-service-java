@@ -386,6 +386,72 @@
 			"response": []
 		},
 		{
+			"name": "29-wait-for-ready",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code >= 500) {",
+							"    setTimeout(function(){",
+							"        console.log(\"Service not yet ready. Sleeping for 60 second(s) before sending next request.\");",
+							"    }, 60000);",
+							"",
+							"    pm.execution.setNextRequest(\"30-generate-login-token\");",
+							"}",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{USER_ACCESS_TOKEN}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"type\": \"login\",\r\n  \"username\": \"jerky\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{EXTEND_APP_SERVICE_URL}}/v1/token",
+					"host": [
+						"{{EXTEND_APP_SERVICE_URL}}"
+					],
+					"path": [
+						"v1",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "30-generate-login-token",
 			"event": [
 				{
