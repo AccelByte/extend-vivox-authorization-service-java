@@ -84,27 +84,3 @@ imagex_push:
 	docker buildx inspect $(BUILDER) || docker buildx create --name $(BUILDER) --use
 	docker buildx build -t ${REPO_URL}:${IMAGE_TAG} --platform linux/amd64 --push .
 	docker buildx rm --keep-state $(BUILDER)
-
-test:
-	docker run -t --rm \
-		-u $$(id -u):$$(id -g) \
-		-v $$(pwd):/data \
-		-w /data \
-		-e GRADLE_USER_HOME=.gradle \
-		gradle:7.6.4-jdk17 \
-		gradle -i --no-daemon generateProto \
-				|| find .gradle -type f -iname 'protoc-*.exe' -exec chmod +x {} \;		# For MacOS docker host: Workaround to make protoc-*.exe executable
-	docker run -t --rm \
-		-u $$(id -u):$$(id -g) \
-		-v $$(pwd):/data \
-		-w /data \
-		-e GRADLE_USER_HOME=.gradle \
-		gradle:7.6.4-jdk17 \
-		gradle -i --no-daemon test
-
-test_docs_broken_links:
-	@test -n "$(SDK_MD_CRAWLER_PATH)" || (echo "SDK_MD_CRAWLER_PATH is not set" ; exit 1)
-	rm -f test.err
-	bash "$(SDK_MD_CRAWLER_PATH)/md-crawler.sh" \
-			-i README.md
-	[ ! -f test.err ]
