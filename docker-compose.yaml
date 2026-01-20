@@ -20,7 +20,6 @@ services:
       - OTEL_METRICS_EXPORTER=none
       - OTEL_TRACES_EXPORTER=zipkin
       - OTEL_PROPAGATORS=b3multi
-      - OTEL_SERVICE_NAME=ExtendServiceExtensionAppJava
       - PLUGIN_GRPC_SERVER_AUTH_ENABLED
       - VIVOX_ISSUER
       - VIVOX_DOMAIN
